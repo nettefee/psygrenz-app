@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.Build;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.*;
@@ -31,12 +30,9 @@ public class MainActivity extends Activity {
     private GridView tiles;
     private ListView documents;
     private DocumentAdapter documentAdapter;
-    private Button backButton;
-    private Button homeButton;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        styleSystemBars();
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(PALE);
@@ -46,15 +42,15 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(dp(8), dp(6), dp(10), dp(6));
         top.setBackgroundColor(PURPLE);
-        backButton = navButton("←");
-        homeButton = navButton("⌂");
+        Button back = navButton("‹");
+        Button home = navButton("⌂");
         TextView title = new TextView(this);
         title.setText("PsyGrenz");
         title.setTextColor(Color.WHITE);
         title.setTextSize(23);
         title.setPadding(dp(10), 0, 0, 0);
-        top.addView(backButton);
-        top.addView(homeButton);
+        top.addView(back);
+        top.addView(home);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(top);
 
@@ -99,19 +95,14 @@ public class MainActivity extends Activity {
         loadData();
         showHome();
 
-        backButton.setOnClickListener(v -> goBack());
-        homeButton.setOnClickListener(v -> showHome());
+        back.setOnClickListener(v -> goBack());
+        home.setOnClickListener(v -> showHome());
         documents.setOnItemClickListener((p, v, pos, id) -> openReader(documentAdapter.getItem(pos)));
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
             public void onTextChanged(CharSequence s, int st, int b, int c) { runSearch(s.toString()); }
             public void afterTextChanged(Editable e) {}
         });
-    }
-
-    @Override protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        showHome();
     }
 
     private void loadData() {
@@ -140,8 +131,6 @@ public class MainActivity extends Activity {
         history.clear();
         search.setText("");
         breadcrumb.setText("Startseite");
-        backButton.setVisibility(View.INVISIBLE);
-        homeButton.setVisibility(View.INVISIBLE);
         showTiles(roots);
     }
 
@@ -150,8 +139,6 @@ public class MainActivity extends Activity {
         current = node;
         search.setText("");
         breadcrumb.setText(buildBreadcrumb(node));
-        backButton.setVisibility(View.VISIBLE);
-        homeButton.setVisibility(View.VISIBLE);
         if (!node.children.isEmpty()) showTiles(node.children);
         else showDocuments(documentsFor(node.path));
     }
@@ -164,8 +151,6 @@ public class MainActivity extends Activity {
         else {
             current = parent;
             breadcrumb.setText(buildBreadcrumb(parent));
-            backButton.setVisibility(View.VISIBLE);
-            homeButton.setVisibility(View.VISIBLE);
             showTiles(parent.children);
         }
     }
@@ -229,11 +214,7 @@ public class MainActivity extends Activity {
     private Button navButton(String text) {
         Button b = new Button(this);
         b.setText(text); b.setTextSize(22); b.setTextColor(Color.WHITE);
-        b.setBackground(rounded(LILAC, dp(18), Color.WHITE));
-        b.setMinWidth(dp(48)); b.setMinHeight(dp(42));
-        b.setPadding(dp(10), 0, dp(10), 0);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(48), dp(42));
-        lp.setMargins(dp(3), 0, dp(3), 0); b.setLayoutParams(lp);
+        b.setBackgroundColor(Color.TRANSPARENT); b.setMinWidth(56); b.setMinHeight(48);
         return b;
     }
 
@@ -261,21 +242,6 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void styleSystemBars() {
-        getWindow().setNavigationBarColor(PURPLE);
-        getWindow().setStatusBarColor(PURPLE);
-        if (Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null) {
-            getWindow().getInsetsController().setSystemBarsAppearance(0,
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS |
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-        } else if (Build.VERSION.SDK_INT >= 26) {
-            int flags = getWindow().getDecorView().getSystemUiVisibility();
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            getWindow().getDecorView().setSystemUiVisibility(flags);
-        }
-    }
-
     private final class TileAdapter extends BaseAdapter {
         private final List<NavNode> nodes;
         TileAdapter(List<NavNode> nodes) { this.nodes = nodes; }
@@ -284,10 +250,8 @@ public class MainActivity extends Activity {
         public long getItemId(int p) { return p; }
         public View getView(int p, View old, ViewGroup parent) {
             TextView tile = old instanceof TextView ? (TextView) old : new TextView(MainActivity.this);
-            String title = nodes.get(p).title.replace("Wissenschaftliche", "Wissen\u00ADschaftliche");
-            tile.setText(title);
-            tile.setTextSize(title.length() > 24 ? 15 : 18); tile.setTextColor(PURPLE); tile.setGravity(Gravity.CENTER);
-            tile.setMaxLines(3);
+            tile.setText(nodes.get(p).title);
+            tile.setTextSize(18); tile.setTextColor(PURPLE); tile.setGravity(Gravity.CENTER);
             tile.setLayoutParams(new AbsListView.LayoutParams(-1, dp(124)));
             tile.setPadding(dp(12), dp(12), dp(12), dp(12));
             tile.setBackground(rounded(Color.WHITE, dp(14), LILAC));
