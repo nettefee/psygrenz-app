@@ -30,6 +30,7 @@ public class MainActivity extends Activity {
     private GridView tiles;
     private ListView documents;
     private DocumentAdapter documentAdapter;
+    private Button backButton;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -42,14 +43,14 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(dp(8), dp(6), dp(10), dp(6));
         top.setBackgroundColor(PURPLE);
-        Button back = navButton("‹");
+        backButton = navButton("‹");
         Button home = navButton("⌂");
         TextView title = new TextView(this);
         title.setText("PsyGrenz");
         title.setTextColor(Color.WHITE);
         title.setTextSize(23);
         title.setPadding(dp(10), 0, 0, 0);
-        top.addView(back);
+        top.addView(backButton);
         top.addView(home);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(top);
@@ -95,7 +96,7 @@ public class MainActivity extends Activity {
         loadData();
         showHome();
 
-        back.setOnClickListener(v -> goBack());
+        backButton.setOnClickListener(v -> goBack());
         home.setOnClickListener(v -> showHome());
         documents.setOnItemClickListener((p, v, pos, id) -> openReader(documentAdapter.getItem(pos)));
         search.addTextChangedListener(new TextWatcher() {
@@ -137,6 +138,7 @@ public class MainActivity extends Activity {
         history.clear();
         search.setText("");
         breadcrumb.setText("Startseite");
+        backButton.setVisibility(View.INVISIBLE);
         showTiles(roots);
     }
 
@@ -145,6 +147,7 @@ public class MainActivity extends Activity {
         current = node;
         search.setText("");
         breadcrumb.setText(buildBreadcrumb(node));
+        backButton.setVisibility(View.VISIBLE);
         if (!node.children.isEmpty()) showTiles(node.children);
         else showDocuments(documentsFor(node.path));
     }
@@ -157,6 +160,7 @@ public class MainActivity extends Activity {
         else {
             current = parent;
             breadcrumb.setText(buildBreadcrumb(parent));
+            backButton.setVisibility(View.VISIBLE);
             showTiles(parent.children);
         }
     }
