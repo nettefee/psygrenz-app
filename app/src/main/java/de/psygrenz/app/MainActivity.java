@@ -105,6 +105,12 @@ public class MainActivity extends Activity {
         });
     }
 
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        showHome();
+    }
+
     private void loadData() {
         try {
             JSONArray docs = new JSONArray(readAsset("documents.json"));
