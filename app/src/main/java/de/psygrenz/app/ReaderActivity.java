@@ -3,6 +3,8 @@ package de.psygrenz.app;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -18,6 +20,7 @@ public class ReaderActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        styleSystemBars();
         String title = getIntent().getStringExtra("title");
         String textPath = getIntent().getStringExtra("text");
         String pdfPath = getIntent().getStringExtra("pdf");
@@ -27,14 +30,20 @@ public class ReaderActivity extends Activity {
         applySystemInsets(root);
 
         LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.VERTICAL);
-        header.setPadding(22, 14, 22, 12);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(8), dp(7), dp(10), dp(7));
         header.setBackgroundColor(Color.rgb(128, 0, 128));
+        Button back = headerButton("←");
+        Button home = headerButton("⌂");
         TextView heading = new TextView(this);
         heading.setText(title);
         heading.setTextSize(20);
         heading.setTextColor(Color.WHITE);
-        header.addView(heading);
+        heading.setPadding(dp(10), 0, 0, 0);
+        header.addView(back);
+        header.addView(home);
+        header.addView(heading, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(header);
 
         LinearLayout tools = new LinearLayout(this);
@@ -59,6 +68,12 @@ public class ReaderActivity extends Activity {
         smaller.setOnClickListener(v -> { size = Math.max(13f, size - 2f); body.setTextSize(size); });
         larger.setOnClickListener(v -> { size = Math.min(34f, size + 2f); body.setTextSize(size); });
         mode.setOnClickListener(v -> { dark = !dark; applyMode(); });
+        back.setOnClickListener(v -> finish());
+        home.setOnClickListener(v -> {
+            Intent i = new Intent(this, MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(i);
+        });
         original.setOnClickListener(v -> {
             Intent i = new Intent(this, PdfActivity.class);
             i.putExtra("title", title); i.putExtra("pdf", pdfPath); startActivity(i);
@@ -73,6 +88,15 @@ public class ReaderActivity extends Activity {
         b.setMinimumHeight(0);
         b.setPadding(18, 8, 18, 8);
         return b;
+    }
+    private Button headerButton(String text) {
+        Button b = new Button(this);
+        b.setText(text); b.setTextSize(21); b.setTextColor(Color.WHITE);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(Color.rgb(190, 78, 202)); bg.setCornerRadius(dp(18)); bg.setStroke(dp(1), Color.WHITE);
+        b.setBackground(bg); b.setPadding(dp(8), 0, dp(8), 0);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(46), dp(40));
+        lp.setMargins(dp(3), 0, dp(3), 0); b.setLayoutParams(lp); return b;
     }
     private void applyMode() {
         root.setBackgroundColor(dark ? Color.rgb(28, 27, 31) : Color.WHITE);
@@ -91,5 +115,20 @@ public class ReaderActivity extends Activity {
             v.setPadding(0, insets.getSystemWindowInsetTop(), 0, insets.getSystemWindowInsetBottom());
             return insets;
         });
+    }
+    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+    private void styleSystemBars() {
+        int purple = Color.rgb(128, 0, 128);
+        getWindow().setNavigationBarColor(purple); getWindow().setStatusBarColor(purple);
+        if (Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null) {
+            getWindow().getInsetsController().setSystemBarsAppearance(0,
+                    android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS |
+                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+        } else if (Build.VERSION.SDK_INT >= 26) {
+            int flags = getWindow().getDecorView().getSystemUiVisibility();
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            getWindow().getDecorView().setSystemUiVisibility(flags);
+        }
     }
 }
