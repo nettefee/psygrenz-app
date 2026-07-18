@@ -4,10 +4,8 @@ import android.app.Activity;
 import android.graphics.*;
 import android.graphics.pdf.PdfRenderer;
 import android.os.Bundle;
-import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.*;
 import java.io.*;
 
@@ -19,7 +17,6 @@ public class PdfActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        styleSystemBars();
         setTitle(getIntent().getStringExtra("title"));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -61,18 +58,4 @@ public class PdfActivity extends Activity {
     }
 
     @Override protected void onDestroy() { if (renderer != null) renderer.close(); super.onDestroy(); }
-    private void styleSystemBars() {
-        int purple = Color.rgb(128, 0, 128);
-        getWindow().setNavigationBarColor(purple); getWindow().setStatusBarColor(purple);
-        if (Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null) {
-            getWindow().getInsetsController().setSystemBarsAppearance(0,
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS |
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-        } else if (Build.VERSION.SDK_INT >= 26) {
-            int flags = getWindow().getDecorView().getSystemUiVisibility();
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            getWindow().getDecorView().setSystemUiVisibility(flags);
-        }
-    }
 }

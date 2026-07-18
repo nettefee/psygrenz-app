@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -20,7 +19,6 @@ public class ReaderActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        styleSystemBars();
         String title = getIntent().getStringExtra("title");
         String textPath = getIntent().getStringExtra("text");
         String pdfPath = getIntent().getStringExtra("pdf");
@@ -117,18 +115,4 @@ public class ReaderActivity extends Activity {
         });
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-    private void styleSystemBars() {
-        int purple = Color.rgb(128, 0, 128);
-        getWindow().setNavigationBarColor(purple); getWindow().setStatusBarColor(purple);
-        if (Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null) {
-            getWindow().getInsetsController().setSystemBarsAppearance(0,
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS |
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-        } else if (Build.VERSION.SDK_INT >= 26) {
-            int flags = getWindow().getDecorView().getSystemUiVisibility();
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            getWindow().getDecorView().setSystemUiVisibility(flags);
-        }
-    }
 }
