@@ -1,0 +1,37 @@
+name: PsyGrenz APK bauen
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: PDF-Werkzeuge installieren
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Dokumentpaket laden
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download documents --pattern pg-dokumente.zip --output pg-dokumente.zip
+      - name: Dokumente vorbereiten
+        run: |
+          mkdir document-source
+          unzip -q pg-dokumente.zip -d document-source
+          python3 scripts/prepare_documents.py document-source app/src/main/assets
+      - name: APK bauen
+        run: gradle --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PsyGrenz-App
+          path: app/build/outputs/apk/debug/app-debug.apk
