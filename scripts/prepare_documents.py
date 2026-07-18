@@ -39,7 +39,7 @@ for index, pdf in enumerate(sorted(source.rglob("*.pdf")), 1):
     cleaned = "\n\n".join(paragraphs).strip() + "\n"
     (text_root / text_name).write_text(cleaned, encoding="utf-8")
     title = re.sub(r"[_-]+", " ", pdf.stem).strip()
-    category = " / ".join(rel.parts[:-1]) or "Allgemein"
+    category = "/".join(rel.parts[:-1]) or "Allgemein"
     documents.append({"title": title, "category": category, "pdf": f"pdfs/{safe}", "text": f"texts/{text_name}"})
 
 (assets / "documents.json").write_text(json.dumps(documents, ensure_ascii=False), encoding="utf-8")

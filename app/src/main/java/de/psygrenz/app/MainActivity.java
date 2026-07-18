@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
 
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setPadding(10, 8, 12, 8);
+        top.setPadding(dp(8), dp(6), dp(10), dp(6));
         top.setBackgroundColor(PURPLE);
         Button back = navButton("‹");
         Button home = navButton("⌂");
@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
         title.setText("PsyGrenz");
         title.setTextColor(Color.WHITE);
         title.setTextSize(23);
-        title.setPadding(12, 0, 0, 0);
+        title.setPadding(dp(10), 0, 0, 0);
         top.addView(back);
         top.addView(home);
         top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
@@ -56,33 +56,33 @@ public class MainActivity extends Activity {
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(18, 12, 18, 12);
+        content.setPadding(dp(16), dp(12), dp(16), dp(12));
         root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
 
         breadcrumb = new TextView(this);
         breadcrumb.setTextSize(14);
         breadcrumb.setTextColor(PURPLE);
-        breadcrumb.setPadding(2, 0, 2, 8);
+        breadcrumb.setPadding(dp(2), 0, dp(2), dp(8));
         content.addView(breadcrumb);
 
         search = new EditText(this);
         search.setHint("Alle Dokumente durchsuchen …");
         search.setSingleLine(true);
         search.setTextSize(16);
-        search.setPadding(18, 8, 18, 8);
-        search.setBackground(rounded(Color.WHITE, 24, LILAC));
+        search.setPadding(dp(16), dp(8), dp(16), dp(8));
+        search.setBackground(rounded(Color.WHITE, dp(12), LILAC));
         content.addView(search, new LinearLayout.LayoutParams(-1, -2));
 
         status = new TextView(this);
         status.setTextColor(Color.rgb(92, 75, 96));
         status.setTextSize(14);
-        status.setPadding(4, 10, 4, 8);
+        status.setPadding(dp(4), dp(10), dp(4), dp(8));
         content.addView(status);
 
         tiles = new GridView(this);
         tiles.setNumColumns(2);
-        tiles.setHorizontalSpacing(12);
-        tiles.setVerticalSpacing(12);
+        tiles.setHorizontalSpacing(dp(14));
+        tiles.setVerticalSpacing(dp(14));
         tiles.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
         content.addView(tiles, new LinearLayout.LayoutParams(-1, 0, 1));
 
@@ -223,6 +223,10 @@ public class MainActivity extends Activity {
         g.setColor(color); g.setCornerRadius(radius); g.setStroke(2, stroke); return g;
     }
 
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
     private String readAsset(String path) throws IOException {
         try (InputStream in = getAssets().open(path); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[8192]; int n;
@@ -248,8 +252,9 @@ public class MainActivity extends Activity {
             TextView tile = old instanceof TextView ? (TextView) old : new TextView(MainActivity.this);
             tile.setText(nodes.get(p).title);
             tile.setTextSize(18); tile.setTextColor(PURPLE); tile.setGravity(Gravity.CENTER);
-            tile.setPadding(16, 24, 16, 24); tile.setMinHeight(160);
-            tile.setBackground(rounded(Color.WHITE, 28, LILAC));
+            tile.setLayoutParams(new AbsListView.LayoutParams(-1, dp(124)));
+            tile.setPadding(dp(12), dp(12), dp(12), dp(12));
+            tile.setBackground(rounded(Color.WHITE, dp(14), LILAC));
             return tile;
         }
     }
