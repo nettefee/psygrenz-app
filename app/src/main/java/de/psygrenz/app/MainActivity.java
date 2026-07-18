@@ -7,9 +7,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Build;
 import android.text.Editable;
-import android.text.Layout;
 import android.text.TextWatcher;
-import android.util.TypedValue;
 import android.view.*;
 import android.widget.*;
 import org.json.JSONArray;
@@ -286,13 +284,10 @@ public class MainActivity extends Activity {
         public long getItemId(int p) { return p; }
         public View getView(int p, View old, ViewGroup parent) {
             TextView tile = old instanceof TextView ? (TextView) old : new TextView(MainActivity.this);
-            tile.setText(nodes.get(p).title);
-            tile.setTextSize(18); tile.setTextColor(PURPLE); tile.setGravity(Gravity.CENTER);
+            String title = nodes.get(p).title.replace("Wissenschaftliche", "Wissen\u00ADschaftliche");
+            tile.setText(title);
+            tile.setTextSize(title.length() > 24 ? 15 : 18); tile.setTextColor(PURPLE); tile.setGravity(Gravity.CENTER);
             tile.setMaxLines(3);
-            tile.setTextLocale(Locale.GERMAN);
-            tile.setBreakStrategy(Layout.BREAK_STRATEGY_HIGH_QUALITY);
-            tile.setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL);
-            tile.setAutoSizeTextTypeUniformWithConfiguration(13, 18, 1, TypedValue.COMPLEX_UNIT_SP);
             tile.setLayoutParams(new AbsListView.LayoutParams(-1, dp(124)));
             tile.setPadding(dp(12), dp(12), dp(12), dp(12));
             tile.setBackground(rounded(Color.WHITE, dp(14), LILAC));
