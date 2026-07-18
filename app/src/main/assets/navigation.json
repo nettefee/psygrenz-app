@@ -1,0 +1,51 @@
+[
+  {
+    "title": "Mediale Kreise",
+    "children": [
+      {
+        "title": "Medialer Friedenskreis Berlin (MFK)",
+        "children": [
+          {"title": "Menetekel", "path": "MFK/Menetekel"},
+          {"title": "Ufologie/Santiner", "path": "MFK/Ufologie"}
+        ]
+      },
+      {
+        "title": "Medialer Arbeitskreis (MAK)",
+        "children": [
+          {"title": "Geistiges Reich / Welt des Lichts", "path": "MAK/Geistiges-Reich_Welt-des-Lichts"},
+          {"title": "Ufologie / Erde", "path": "MAK/Ufologie-Erde"}
+        ]
+      },
+      {"title": "Prof. Dr. rer. nat. Schiebeler", "path": "Prof-Schiebeler"},
+      {"title": "Theologie – Pf. J. Greber / Dr. Erich Luban", "path": "Theologie"},
+      {
+        "title": "Sonstige",
+        "children": [
+          {"title": "Die blauen Hefte", "path": "Referate/Die-blauen-Hefte"},
+          {"title": "Das große Warum", "path": "Referate/Das-grosse-Warum"}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Ufologie",
+    "children": [
+      {"title": "Hermann Ilg", "path": "Hermann-Ilg"},
+      {"title": "MFK-Ufologie", "path": "MFK/Ufologie"},
+      {"title": "MAK-Ufologie", "path": "MAK/Ufologie-Erde"}
+    ]
+  },
+  {
+    "title": "Geisteswissen",
+    "children": [
+      {"title": "Wissenschaftliche Berichte", "path": "Wissenschaft"},
+      {"title": "Referate & Berichte", "path": "Referate"},
+      {"title": "Lichtgebete", "path": "Lichtgebete"},
+      {"title": "Erlebnisberichte", "path": "Erlebnisberichte"},
+      {"title": "Hilfe durch Geistheiler", "path": "Geistheiler"},
+      {"title": "Meditation", "path": "Meditation"},
+      {"title": "Leserfragen", "path": "Leserfragen"},
+      {"title": "Literatur", "path": "Literatur"}
+    ]
+  }
+]

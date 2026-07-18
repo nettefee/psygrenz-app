@@ -29,7 +29,7 @@ public class ReaderActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.VERTICAL);
         header.setPadding(22, 14, 22, 12);
-        header.setBackgroundColor(Color.rgb(103, 80, 164));
+        header.setBackgroundColor(Color.rgb(128, 0, 128));
         TextView heading = new TextView(this);
         heading.setText(title);
         heading.setTextSize(20);
