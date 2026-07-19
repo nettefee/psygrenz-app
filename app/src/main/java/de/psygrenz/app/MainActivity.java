@@ -89,6 +89,7 @@ public class MainActivity extends Activity {
         search = new EditText(this);
         search.setHint("Alle Dokumente durchsuchen …");
         search.setSingleLine(true);
+        search.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
         search.setTextSize(16);
         search.setPadding(dp(16), dp(8), dp(16), dp(8));
         search.setBackground(rounded(Color.WHITE, dp(12), LILAC));
@@ -123,6 +124,17 @@ public class MainActivity extends Activity {
             public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
             public void onTextChanged(CharSequence s, int st, int b, int c) { runSearch(s.toString()); }
             public void afterTextChanged(Editable e) {}
+        });
+        search.setOnEditorActionListener((view, actionId, event) -> {
+            boolean enterPressed = event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER;
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE || enterPressed) {
+                android.view.inputmethod.InputMethodManager keyboard =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (keyboard != null) keyboard.hideSoftInputFromWindow(search.getWindowToken(), 0);
+                search.clearFocus();
+                return true;
+            }
+            return false;
         });
     }
 
