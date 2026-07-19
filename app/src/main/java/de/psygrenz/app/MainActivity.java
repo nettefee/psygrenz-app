@@ -245,6 +245,7 @@ public class MainActivity extends Activity {
         if (d == null) return;
         Intent i = new Intent(this, ReaderActivity.class);
         i.putExtra("title", d.title); i.putExtra("text", d.textPath); i.putExtra("pdf", d.pdfPath);
+        i.putExtra("query", search.getText().toString().trim());
         startActivity(i);
     }
 

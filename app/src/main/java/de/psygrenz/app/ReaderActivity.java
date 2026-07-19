@@ -3,13 +3,19 @@ package de.psygrenz.app;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class ReaderActivity extends Activity {
     private TextView body;
@@ -22,6 +28,7 @@ public class ReaderActivity extends Activity {
         String title = getIntent().getStringExtra("title");
         String textPath = getIntent().getStringExtra("text");
         String pdfPath = getIntent().getStringExtra("pdf");
+        String query = getIntent().getStringExtra("query");
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -57,12 +64,38 @@ public class ReaderActivity extends Activity {
         body.setTextSize(size);
         body.setLineSpacing(4, 1.18f);
         body.setPadding(24, 20, 24, 56);
-        try { body.setText(readAsset(textPath)); }
+        int firstMatch = -1;
+        try {
+            String documentText = readAsset(textPath);
+            if (query != null && !query.trim().isEmpty()) {
+                query = query.trim();
+                SpannableString highlighted = new SpannableString(documentText);
+                String searchableText = documentText.toLowerCase(Locale.GERMAN);
+                String searchableQuery = query.toLowerCase(Locale.GERMAN);
+                int position = 0;
+                while ((position = searchableText.indexOf(searchableQuery, position)) >= 0) {
+                    if (firstMatch < 0) firstMatch = position;
+                    int end = position + query.length();
+                    highlighted.setSpan(new BackgroundColorSpan(Color.rgb(244, 190, 250)), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    highlighted.setSpan(new StyleSpan(Typeface.BOLD), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    position = end;
+                }
+                body.setText(highlighted);
+            } else body.setText(documentText);
+        }
         catch (Exception e) { body.setText("Der Text konnte nicht geladen werden."); }
         scroll.addView(body);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
         applyMode();
+
+        final int scrollTarget = firstMatch;
+        if (scrollTarget >= 0) body.post(() -> {
+            if (body.getLayout() != null) {
+                int line = body.getLayout().getLineForOffset(scrollTarget);
+                scroll.smoothScrollTo(0, Math.max(0, body.getLayout().getLineTop(line) - dp(18)));
+            }
+        });
 
         smaller.setOnClickListener(v -> { size = Math.max(13f, size - 2f); body.setTextSize(size); });
         larger.setOnClickListener(v -> { size = Math.min(34f, size + 2f); body.setTextSize(size); });
