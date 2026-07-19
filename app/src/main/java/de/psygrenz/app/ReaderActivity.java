@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public class ReaderActivity extends Activity {
     private TextView body;
