@@ -6,7 +6,13 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextWatcher;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
+import android.graphics.Typeface;
 import android.view.*;
 import android.widget.*;
 import org.json.JSONArray;
@@ -26,6 +32,7 @@ public class MainActivity extends Activity {
     private NavNode current;
     private EditText search;
     private TextView breadcrumb;
+    private TextView introduction;
     private TextView status;
     private GridView tiles;
     private ListView documents;
@@ -76,6 +83,17 @@ public class MainActivity extends Activity {
         breadcrumb.setTextColor(PURPLE);
         breadcrumb.setPadding(dp(2), 0, dp(2), dp(8));
         content.addView(breadcrumb);
+
+        introduction = new TextView(this);
+        introduction.setText("Willkommen bei PsyGrenz – Ihrem Wegweiser durch die psychowissenschaftlichen Grenzgebiete: medial überlieferte Botschaften, die Licht auf den Sinn des Lebens und die Frage nach Tod und Wiedergeburt werfen. Tippen Sie auf eine Kachel, um einzutauchen.");
+        introduction.setTextSize(15);
+        introduction.setTextColor(Color.rgb(55, 45, 58));
+        introduction.setLineSpacing(dp(2), 1.08f);
+        introduction.setPadding(dp(15), dp(12), dp(15), dp(12));
+        introduction.setBackground(rounded(Color.WHITE, dp(12), LILAC));
+        LinearLayout.LayoutParams introParams = new LinearLayout.LayoutParams(-1, -2);
+        introParams.setMargins(0, 0, 0, dp(12));
+        content.addView(introduction, introParams);
 
         search = new EditText(this);
         search.setHint("Alle Dokumente durchsuchen …");
@@ -138,7 +156,7 @@ public class MainActivity extends Activity {
     }
 
     private NavNode parseNode(JSONObject o, NavNode parent) throws Exception {
-        NavNode n = new NavNode(o.getString("title"), o.optString("path", ""), parent);
+        NavNode n = new NavNode(o.getString("title"), o.optString("description", ""), o.optString("path", ""), parent);
         JSONArray children = o.optJSONArray("children");
         if (children != null) for (int i = 0; i < children.length(); i++) n.children.add(parseNode(children.getJSONObject(i), n));
         return n;
@@ -150,6 +168,7 @@ public class MainActivity extends Activity {
         search.setText("");
         breadcrumb.setText("Startseite");
         navigationRow.setVisibility(View.GONE);
+        introduction.setVisibility(View.VISIBLE);
         showTiles(roots);
     }
 
@@ -159,6 +178,7 @@ public class MainActivity extends Activity {
         search.setText("");
         breadcrumb.setText(buildBreadcrumb(node));
         navigationRow.setVisibility(View.VISIBLE);
+        introduction.setVisibility(View.GONE);
         if (!node.children.isEmpty()) showTiles(node.children);
         else showDocuments(documentsFor(node.path));
     }
@@ -202,11 +222,17 @@ public class MainActivity extends Activity {
     private void runSearch(String raw) {
         String q = raw.trim().toLowerCase(Locale.GERMAN);
         if (q.isEmpty()) {
-            if (current == null) showTiles(roots);
-            else if (!current.children.isEmpty()) showTiles(current.children);
-            else showDocuments(documentsFor(current.path));
+            if (current == null) {
+                introduction.setVisibility(View.VISIBLE);
+                showTiles(roots);
+            } else {
+                introduction.setVisibility(View.GONE);
+                if (!current.children.isEmpty()) showTiles(current.children);
+                else showDocuments(documentsFor(current.path));
+            }
             return;
         }
+        introduction.setVisibility(View.GONE);
         status.setText("Suche läuft …");
         new Thread(() -> {
             List<DocumentItem> found = new ArrayList<>();
@@ -274,9 +300,21 @@ public class MainActivity extends Activity {
         public long getItemId(int p) { return p; }
         public View getView(int p, View old, ViewGroup parent) {
             TextView tile = old instanceof TextView ? (TextView) old : new TextView(MainActivity.this);
-            tile.setText(nodes.get(p).title);
+            NavNode node = nodes.get(p);
+            if (node.description.isEmpty()) {
+                tile.setText(node.title);
+            } else {
+                String text = node.title + "\n\n" + node.description;
+                SpannableString styled = new SpannableString(text);
+                styled.setSpan(new StyleSpan(Typeface.BOLD), 0, node.title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                int descriptionStart = node.title.length() + 2;
+                styled.setSpan(new RelativeSizeSpan(0.76f), descriptionStart, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                styled.setSpan(new ForegroundColorSpan(Color.rgb(70, 60, 74)), descriptionStart, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tile.setText(styled);
+            }
             tile.setTextSize(18); tile.setTextColor(PURPLE); tile.setGravity(Gravity.CENTER);
-            tile.setLayoutParams(new AbsListView.LayoutParams(-1, dp(124)));
+            tile.setLineSpacing(dp(1), 1.05f);
+            tile.setLayoutParams(new AbsListView.LayoutParams(-1, dp(node.parent == null ? 176 : 124)));
             tile.setPadding(dp(12), dp(12), dp(12), dp(12));
             tile.setBackground(rounded(Color.WHITE, dp(14), LILAC));
             return tile;
@@ -296,7 +334,7 @@ public class MainActivity extends Activity {
     }
 
     private static final class NavNode {
-        final String title, path; final NavNode parent; final List<NavNode> children = new ArrayList<>();
-        NavNode(String title, String path, NavNode parent) { this.title = title; this.path = path; this.parent = parent; }
+        final String title, description, path; final NavNode parent; final List<NavNode> children = new ArrayList<>();
+        NavNode(String title, String description, String path, NavNode parent) { this.title = title; this.description = description; this.path = path; this.parent = parent; }
     }
 }

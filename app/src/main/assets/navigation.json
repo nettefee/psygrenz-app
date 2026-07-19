@@ -1,6 +1,7 @@
 [
   {
     "title": "Mediale Kreise",
+    "description": "Protokolle und Schriften verschiedener medialer Arbeitskreise.",
     "children": [
       {
         "title": "Medialer Friedenskreis Berlin (MFK)",
@@ -29,6 +30,7 @@
   },
   {
     "title": "Ufologie",
+    "description": "Mediale Botschaften zu außerirdischem Leben und den Santinern.",
     "children": [
       {"title": "Hermann Ilg", "path": "Hermann-Ilg"},
       {"title": "MFK-Ufologie", "path": "MFK/Ufologie"},
@@ -37,6 +39,7 @@
   },
   {
     "title": "Geisteswissen",
+    "description": "Wissenschaftliche Berichte, Erfahrungen, Lichtgebete und weitere Themen.",
     "children": [
       {"title": "Wissenschaftliche Berichte", "path": "Wissenschaft"},
       {"title": "Referate & Berichte", "path": "Referate"},
