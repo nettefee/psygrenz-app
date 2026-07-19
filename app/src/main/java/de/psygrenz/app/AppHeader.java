@@ -45,6 +45,7 @@ final class AppHeader {
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(activity, menu);
             popup.getMenu().add("Favoriten");
+            popup.getMenu().add("Datensicherung");
             popup.getMenu().add("Info");
             popup.getMenu().add("Suchtipps");
             popup.getMenu().add("Schließen");
@@ -54,6 +55,11 @@ final class AppHeader {
                     favorites.putExtra("show_favorites", true);
                     favorites.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     activity.startActivity(favorites);
+                } else if (item.getTitle().toString().equals("Datensicherung")) {
+                    Intent backup = new Intent(activity, MainActivity.class);
+                    backup.putExtra("show_backup", true);
+                    backup.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    activity.startActivity(backup);
                 } else if (item.getTitle().toString().equals("Info")) {
                     String info = "PsyGrenz ist Ihr Wegweiser durch die psychowissenschaftlichen Grenzgebiete: medial überlieferte Botschaften, die Licht auf den Sinn des Lebens und die Frage nach Tod und Wiedergeburt werfen.\n\n" +
                                     "Die PsyGrenz-App enthält alle medialen Schriften (Protokolle), die auch auf der Internetseite psygrenz.de veröffentlicht sind. Alle Inhalte stehen vollständig zum Lesen zur Verfügung – auch ohne Internetverbindung.\n\n" +

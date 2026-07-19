@@ -22,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MainActivity extends Activity {
+    private static final int REQUEST_BACKUP_EXPORT = 7001;
+    private static final int REQUEST_BACKUP_IMPORT = 7002;
     private static final int PURPLE = Color.rgb(128, 0, 128);       // #800080
     private static final int LILAC = Color.rgb(190, 78, 202);      // #be4eca
     private static final int PALE = Color.rgb(253, 239, 255);      // #fdefff
@@ -136,17 +138,102 @@ public class MainActivity extends Activity {
             }
             return false;
         });
+        if (getIntent().getBooleanExtra("show_backup", false)) root.post(this::showBackupDialog);
     }
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
         if (intent.getBooleanExtra("show_favorites", false)) showFavorites(); else showHome();
+        if (intent.getBooleanExtra("show_backup", false)) navigationRow.post(this::showBackupDialog);
     }
 
     @Override protected void onResume() {
         super.onResume();
         if (favoritesMode && documentAdapter != null) showDocuments(favoriteDocuments());
+    }
+
+    private void showBackupDialog() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Datensicherung")
+                .setItems(new String[]{"Sicherung erstellen", "Sicherung wiederherstellen"}, (dialog, which) -> {
+                    if (which == 0) {
+                        Intent create = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                        create.setType("application/json");
+                        create.putExtra(Intent.EXTRA_TITLE, "PsyGrenz-Sicherung.json");
+                        startActivityForResult(create, REQUEST_BACKUP_EXPORT);
+                    } else {
+                        Intent open = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                        open.setType("application/json");
+                        open.addCategory(Intent.CATEGORY_OPENABLE);
+                        startActivityForResult(open, REQUEST_BACKUP_IMPORT);
+                    }
+                }).setNegativeButton("Abbrechen", null).show();
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        try {
+            if (requestCode == REQUEST_BACKUP_EXPORT) exportBackup(data.getData());
+            else if (requestCode == REQUEST_BACKUP_IMPORT) importBackup(data.getData());
+        } catch (Exception e) {
+            Toast.makeText(this, "Die Datensicherung konnte nicht verarbeitet werden.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void exportBackup(android.net.Uri target) throws Exception {
+        JSONObject root = new JSONObject();
+        root.put("format", 1);
+        root.put("created", System.currentTimeMillis());
+        JSONObject values = new JSONObject();
+        Map<String, ?> stored = getSharedPreferences("psygrenz", MODE_PRIVATE).getAll();
+        for (Map.Entry<String, ?> entry : stored.entrySet()) {
+            JSONObject value = new JSONObject();
+            Object content = entry.getValue();
+            if (content instanceof String) { value.put("type", "string"); value.put("value", content); }
+            else if (content instanceof Integer) { value.put("type", "int"); value.put("value", content); }
+            else if (content instanceof Boolean) { value.put("type", "boolean"); value.put("value", content); }
+            else if (content instanceof Set) {
+                value.put("type", "set"); JSONArray array = new JSONArray();
+                for (Object item : (Set<?>) content) array.put(String.valueOf(item));
+                value.put("value", array);
+            } else continue;
+            values.put(entry.getKey(), value);
+        }
+        root.put("values", values);
+        try (OutputStream out = getContentResolver().openOutputStream(target)) {
+            if (out == null) throw new IOException();
+            out.write(root.toString(2).getBytes(StandardCharsets.UTF_8));
+        }
+        Toast.makeText(this, "PsyGrenz-Sicherung wurde erstellt.", Toast.LENGTH_LONG).show();
+    }
+
+    private void importBackup(android.net.Uri source) throws Exception {
+        String json;
+        try (InputStream in = getContentResolver().openInputStream(source); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (in == null) throw new IOException();
+            byte[] buffer = new byte[8192]; int read;
+            while ((read = in.read(buffer)) >= 0) out.write(buffer, 0, read);
+            json = out.toString(StandardCharsets.UTF_8.name());
+        }
+        JSONObject root = new JSONObject(json), values = root.getJSONObject("values");
+        android.content.SharedPreferences.Editor editor = getSharedPreferences("psygrenz", MODE_PRIVATE).edit().clear();
+        Iterator<String> keys = values.keys();
+        while (keys.hasNext()) {
+            String key = keys.next(); JSONObject value = values.getJSONObject(key);
+            String type = value.getString("type");
+            if (type.equals("string")) editor.putString(key, value.getString("value"));
+            else if (type.equals("int")) editor.putInt(key, value.getInt("value"));
+            else if (type.equals("boolean")) editor.putBoolean(key, value.getBoolean("value"));
+            else if (type.equals("set")) {
+                JSONArray array = value.getJSONArray("value"); Set<String> set = new HashSet<>();
+                for (int i = 0; i < array.length(); i++) set.add(array.getString(i));
+                editor.putStringSet(key, set);
+            }
+        }
+        editor.apply(); showHome();
+        Toast.makeText(this, "PsyGrenz-Sicherung wurde wiederhergestellt.", Toast.LENGTH_LONG).show();
     }
 
     private void loadData() {
