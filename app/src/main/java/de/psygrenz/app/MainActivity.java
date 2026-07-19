@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
     private Button backButton;
     private Button homeButton;
     private LinearLayout navigationRow;
+    private Button clearRecentButton;
     private boolean favoritesMode = false;
     private boolean recentMode = false;
 
@@ -71,6 +72,12 @@ public class MainActivity extends Activity {
         navigationRow.addView(backButton, navLeft);
         navigationRow.addView(homeButton, navRight);
         content.addView(navigationRow);
+
+        clearRecentButton = navigationButton("Liste der zuletzt gelesenen Dokumente leeren");
+        LinearLayout.LayoutParams clearRecentParams = new LinearLayout.LayoutParams(-1, dp(44));
+        clearRecentParams.setMargins(0, 0, 0, dp(10));
+        content.addView(clearRecentButton, clearRecentParams);
+        clearRecentButton.setVisibility(View.GONE);
 
         breadcrumb = new TextView(this);
         breadcrumb.setTextSize(14);
@@ -124,6 +131,7 @@ public class MainActivity extends Activity {
 
         backButton.setOnClickListener(v -> goBack());
         homeButton.setOnClickListener(v -> showHome());
+        clearRecentButton.setOnClickListener(v -> confirmClearRecent());
         documents.setOnItemClickListener((p, v, pos, id) -> openReader(documentAdapter.getItem(pos)));
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
@@ -275,6 +283,7 @@ public class MainActivity extends Activity {
         search.setText("");
         breadcrumb.setText("Startseite");
         navigationRow.setVisibility(View.GONE);
+        clearRecentButton.setVisibility(View.GONE);
         introduction.setVisibility(View.VISIBLE);
         showTiles(roots);
     }
@@ -287,6 +296,7 @@ public class MainActivity extends Activity {
         search.setText("");
         breadcrumb.setText("Favoriten");
         navigationRow.setVisibility(View.VISIBLE);
+        clearRecentButton.setVisibility(View.GONE);
         introduction.setVisibility(View.GONE);
         showDocuments(favoriteDocuments());
     }
@@ -297,8 +307,20 @@ public class MainActivity extends Activity {
         current = null; history.clear(); search.setText("");
         breadcrumb.setText("Zuletzt gelesen");
         navigationRow.setVisibility(View.VISIBLE);
+        clearRecentButton.setVisibility(View.VISIBLE);
         introduction.setVisibility(View.GONE);
         showDocuments(recentDocuments());
+    }
+
+    private void confirmClearRecent() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Liste leeren?")
+                .setMessage("Die Liste der zuletzt gelesenen Dokumente wird geleert. Favoriten, Notizen und Lesepositionen bleiben erhalten.")
+                .setNegativeButton("Abbrechen", null)
+                .setPositiveButton("Liste leeren", (dialog, which) -> {
+                    getSharedPreferences("psygrenz", MODE_PRIVATE).edit().remove("recent").apply();
+                    showDocuments(Collections.emptyList());
+                }).show();
     }
 
     private List<DocumentItem> recentDocuments() {
@@ -326,6 +348,7 @@ public class MainActivity extends Activity {
         search.setText("");
         breadcrumb.setText(buildBreadcrumb(node));
         navigationRow.setVisibility(View.VISIBLE);
+        clearRecentButton.setVisibility(View.GONE);
         introduction.setVisibility(View.GONE);
         if (!node.children.isEmpty()) showTiles(node.children);
         else showDocuments(documentsFor(node.path));
