@@ -31,6 +31,8 @@ public class MainActivity extends Activity {
     private ListView documents;
     private DocumentAdapter documentAdapter;
     private Button backButton;
+    private Button homeButton;
+    private LinearLayout navigationRow;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -43,22 +45,31 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(dp(8), dp(6), dp(10), dp(6));
         top.setBackgroundColor(PURPLE);
-        backButton = navButton("‹");
-        Button home = navButton("⌂");
         TextView title = new TextView(this);
         title.setText("PsyGrenz");
         title.setTextColor(Color.WHITE);
         title.setTextSize(23);
-        title.setPadding(dp(10), 0, 0, 0);
-        top.addView(backButton);
-        top.addView(home);
-        top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        title.setGravity(Gravity.CENTER);
+        top.addView(title, new LinearLayout.LayoutParams(-1, dp(54)));
         root.addView(top);
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(16), dp(12), dp(16), dp(12));
         root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
+
+        navigationRow = new LinearLayout(this);
+        navigationRow.setOrientation(LinearLayout.HORIZONTAL);
+        navigationRow.setPadding(0, 0, 0, dp(10));
+        backButton = navigationButton("‹  Zurück");
+        homeButton = navigationButton("⌂  Startseite");
+        LinearLayout.LayoutParams navLeft = new LinearLayout.LayoutParams(0, dp(44), 1);
+        navLeft.setMargins(0, 0, dp(6), 0);
+        LinearLayout.LayoutParams navRight = new LinearLayout.LayoutParams(0, dp(44), 1);
+        navRight.setMargins(dp(6), 0, 0, 0);
+        navigationRow.addView(backButton, navLeft);
+        navigationRow.addView(homeButton, navRight);
+        content.addView(navigationRow);
 
         breadcrumb = new TextView(this);
         breadcrumb.setTextSize(14);
@@ -97,7 +108,7 @@ public class MainActivity extends Activity {
         showHome();
 
         backButton.setOnClickListener(v -> goBack());
-        home.setOnClickListener(v -> showHome());
+        homeButton.setOnClickListener(v -> showHome());
         documents.setOnItemClickListener((p, v, pos, id) -> openReader(documentAdapter.getItem(pos)));
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
@@ -138,7 +149,7 @@ public class MainActivity extends Activity {
         history.clear();
         search.setText("");
         breadcrumb.setText("Startseite");
-        backButton.setVisibility(View.INVISIBLE);
+        navigationRow.setVisibility(View.GONE);
         showTiles(roots);
     }
 
@@ -147,7 +158,7 @@ public class MainActivity extends Activity {
         current = node;
         search.setText("");
         breadcrumb.setText(buildBreadcrumb(node));
-        backButton.setVisibility(View.VISIBLE);
+        navigationRow.setVisibility(View.VISIBLE);
         if (!node.children.isEmpty()) showTiles(node.children);
         else showDocuments(documentsFor(node.path));
     }
@@ -160,7 +171,7 @@ public class MainActivity extends Activity {
         else {
             current = parent;
             breadcrumb.setText(buildBreadcrumb(parent));
-            backButton.setVisibility(View.VISIBLE);
+            navigationRow.setVisibility(View.VISIBLE);
             showTiles(parent.children);
         }
     }
@@ -221,10 +232,13 @@ public class MainActivity extends Activity {
         startActivity(i);
     }
 
-    private Button navButton(String text) {
+    private Button navigationButton(String text) {
         Button b = new Button(this);
-        b.setText(text); b.setTextSize(22); b.setTextColor(Color.WHITE);
-        b.setBackgroundColor(Color.TRANSPARENT); b.setMinWidth(56); b.setMinHeight(48);
+        b.setText(text); b.setTextSize(15); b.setTextColor(PURPLE);
+        b.setAllCaps(false);
+        b.setBackground(rounded(Color.WHITE, dp(12), LILAC));
+        b.setMinHeight(0); b.setMinimumHeight(0);
+        b.setPadding(dp(8), 0, dp(8), 0);
         return b;
     }
 
