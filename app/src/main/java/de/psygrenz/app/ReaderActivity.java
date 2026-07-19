@@ -41,6 +41,8 @@ public class ReaderActivity extends Activity {
     private String documentKey;
     private Button favoriteButton;
     private Button noteButton;
+    private Button documentStartButton;
+    private int returnPosition = -1;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -83,13 +85,17 @@ public class ReaderActivity extends Activity {
         LinearLayout personal = new LinearLayout(this);
         personal.setPadding(dp(8), 0, dp(8), dp(6));
         favoriteButton = matchButton("");
+        documentStartButton = matchButton("↑  Anfang");
         noteButton = matchButton("");
         updatePersonalButtons();
         LinearLayout.LayoutParams personalLeft = new LinearLayout.LayoutParams(0, dp(42), 1);
-        personalLeft.setMargins(0, 0, dp(5), 0);
+        personalLeft.setMargins(0, 0, dp(4), 0);
+        LinearLayout.LayoutParams personalCenter = new LinearLayout.LayoutParams(0, dp(42), 1);
+        personalCenter.setMargins(dp(4), 0, dp(4), 0);
         LinearLayout.LayoutParams personalRight = new LinearLayout.LayoutParams(0, dp(42), 1);
-        personalRight.setMargins(dp(5), 0, 0, 0);
+        personalRight.setMargins(dp(4), 0, 0, 0);
         personal.addView(favoriteButton, personalLeft);
+        personal.addView(documentStartButton, personalCenter);
         personal.addView(noteButton, personalRight);
         root.addView(personal);
 
@@ -167,6 +173,17 @@ public class ReaderActivity extends Activity {
             if (currentMatch + 1 < matches.size()) scrollToMatch(currentMatch + 1);
         });
         favoriteButton.setOnClickListener(v -> toggleFavorite());
+        documentStartButton.setOnClickListener(v -> {
+            if (returnPosition < 0) {
+                returnPosition = scroll.getScrollY();
+                scroll.scrollTo(0, 0);
+                documentStartButton.setText("↩  Lesestelle");
+            } else {
+                scroll.scrollTo(0, returnPosition);
+                returnPosition = -1;
+                documentStartButton.setText("↑  Anfang");
+            }
+        });
         noteButton.setOnClickListener(v -> showNotes());
     }
 
@@ -305,7 +322,8 @@ public class ReaderActivity extends Activity {
 
     @Override protected void onPause() {
         if (scroll != null && documentKey != null)
-            preferences.edit().putInt("position:" + documentKey, scroll.getScrollY()).apply();
+            preferences.edit().putInt("position:" + documentKey,
+                    returnPosition >= 0 ? returnPosition : scroll.getScrollY()).apply();
         super.onPause();
     }
 
