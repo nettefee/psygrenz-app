@@ -3,6 +3,10 @@ package de.psygrenz.app;
 import android.app.*;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
+import android.text.style.URLSpan;
 import android.view.*;
 import android.widget.*;
 
@@ -35,11 +39,24 @@ final class AppHeader {
             popup.getMenu().add("Schließen");
             popup.setOnMenuItemClickListener(item -> {
                 if (item.getTitle().toString().equals("Info")) {
-                    new AlertDialog.Builder(activity).setTitle("Über diese App")
-                            .setMessage("PsyGrenz ist Ihr Wegweiser durch die psychowissenschaftlichen Grenzgebiete: medial überlieferte Botschaften, die Licht auf den Sinn des Lebens und die Frage nach Tod und Wiedergeburt werfen.\n\n" +
+                    String info = "PsyGrenz ist Ihr Wegweiser durch die psychowissenschaftlichen Grenzgebiete: medial überlieferte Botschaften, die Licht auf den Sinn des Lebens und die Frage nach Tod und Wiedergeburt werfen.\n\n" +
                                     "Die PsyGrenz-App enthält alle medialen Schriften (Protokolle), die auch auf der Internetseite psygrenz.de veröffentlicht sind. Alle Inhalte stehen vollständig zum Lesen zur Verfügung – auch ohne Internetverbindung.\n\n" +
-                                    "Ergänzende Informationen, weitere Materialien und Hintergründe finden Sie auf unserer Webseite: www.psygrenz.de")
-                            .setPositiveButton("Schließen", (DialogInterface d, int w) -> d.dismiss()).show();
+                                    "Ergänzende Informationen, weitere Materialien und Hintergründe finden Sie auf unserer Webseite: www.psygrenz.de";
+                    SpannableString linkedInfo = new SpannableString(info);
+                    String linkText = "www.psygrenz.de";
+                    int linkStart = info.lastIndexOf(linkText);
+                    linkedInfo.setSpan(new URLSpan("https://www.psygrenz.de"), linkStart, linkStart + linkText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    AlertDialog dialog = new AlertDialog.Builder(activity).setTitle("Über diese App")
+                            .setMessage(linkedInfo)
+                            .setPositiveButton("Schließen", (DialogInterface d, int w) -> d.dismiss()).create();
+                    dialog.setOnShowListener(ignored -> {
+                        TextView message = dialog.findViewById(android.R.id.message);
+                        if (message != null) {
+                            message.setMovementMethod(LinkMovementMethod.getInstance());
+                            message.setLinkTextColor(Color.rgb(128, 0, 128));
+                        }
+                    });
+                    dialog.show();
                 } else activity.finishAffinity();
                 return true;
             });
