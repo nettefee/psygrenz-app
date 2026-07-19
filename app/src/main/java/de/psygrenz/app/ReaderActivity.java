@@ -107,6 +107,30 @@ public class ReaderActivity extends Activity {
         body.setTextSize(size);
         body.setLineSpacing(4, 1.18f);
         body.setPadding(24, 20, 24, 56);
+        body.setTextIsSelectable(true);
+        body.setCustomSelectionActionModeCallback(new android.view.ActionMode.Callback() {
+            private static final int SHARE_SELECTION = 9001;
+            public boolean onCreateActionMode(android.view.ActionMode mode, android.view.Menu menu) {
+                menu.add(0, SHARE_SELECTION, 100, "Teilen");
+                return true;
+            }
+            public boolean onPrepareActionMode(android.view.ActionMode mode, android.view.Menu menu) { return false; }
+            public boolean onActionItemClicked(android.view.ActionMode mode, android.view.MenuItem item) {
+                if (item.getItemId() != SHARE_SELECTION) return false;
+                int start = Math.max(0, body.getSelectionStart()), end = Math.max(0, body.getSelectionEnd());
+                if (start > end) { int swap = start; start = end; end = swap; }
+                if (start == end) return true;
+                String selected = body.getText().subSequence(start, end).toString();
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("text/plain");
+                share.putExtra(Intent.EXTRA_SUBJECT, title);
+                share.putExtra(Intent.EXTRA_TEXT, selected + "\n\nQuelle: " + title + " – PsyGrenz-App");
+                startActivity(Intent.createChooser(share, "Textstelle teilen"));
+                mode.finish();
+                return true;
+            }
+            public void onDestroyActionMode(android.view.ActionMode mode) {}
+        });
         try {
             String documentText = readAsset(textPath);
             if (query != null && !query.trim().isEmpty()) {
