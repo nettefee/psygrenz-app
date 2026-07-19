@@ -14,6 +14,8 @@ import android.text.style.StyleSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -164,7 +166,7 @@ public class ReaderActivity extends Activity {
             if (currentMatch + 1 < matches.size()) scrollToMatch(currentMatch + 1);
         });
         favoriteButton.setOnClickListener(v -> toggleFavorite());
-        noteButton.setOnClickListener(v -> editNote());
+        noteButton.setOnClickListener(v -> showNotes());
     }
 
     private void toggleFavorite() {
@@ -174,31 +176,130 @@ public class ReaderActivity extends Activity {
         updatePersonalButtons();
     }
 
-    private void editNote() {
+    private void showNotes() {
+        List<AnchoredNote> notes = loadNotes();
+        if (notes.isEmpty()) {
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Notizen")
+                    .setMessage("Zu diesem Dokument gibt es noch keine Notizen.")
+                    .setNegativeButton("Schließen", null)
+                    .setPositiveButton("Neue Notiz hier", (dialog, which) -> editAnchoredNote(null))
+                    .show();
+            return;
+        }
+        String[] labels = new String[notes.size()];
+        for (int i = 0; i < notes.size(); i++)
+            labels[i] = excerptAt(notes.get(i).offset) + "\n„" + notes.get(i).text + "“";
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Notizen zu diesem Dokument")
+                .setItems(labels, (dialog, which) -> showNoteActions(notes.get(which)))
+                .setNegativeButton("Schließen", null)
+                .setPositiveButton("Neue Notiz hier", (dialog, which) -> editAnchoredNote(null))
+                .show();
+    }
+
+    private void showNoteActions(AnchoredNote note) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(excerptAt(note.offset))
+                .setMessage(note.text)
+                .setNeutralButton("Löschen", (dialog, which) -> deleteAnchoredNote(note))
+                .setNegativeButton("Bearbeiten", (dialog, which) -> editAnchoredNote(note))
+                .setPositiveButton("Zur Textstelle", (dialog, which) -> jumpToOffset(note.offset))
+                .show();
+    }
+
+    private void editAnchoredNote(AnchoredNote existing) {
+        int anchorOffset = existing == null ? currentTextOffset() : existing.offset;
         EditText input = new EditText(this);
-        input.setText(preferences.getString("note:" + documentKey, ""));
-        input.setHint("Deine Notiz zu diesem Dokument …");
+        input.setText(existing == null ? "" : existing.text);
+        input.setHint("Deine Notiz zu dieser Textstelle …");
         input.setMinLines(5); input.setGravity(Gravity.TOP);
         input.setPadding(dp(18), dp(12), dp(18), dp(12));
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Eigene Notiz")
+                .setTitle(existing == null ? "Neue Notiz an dieser Stelle" : "Notiz bearbeiten")
                 .setView(input)
                 .setNegativeButton("Abbrechen", null)
-                .setNeutralButton("Notiz löschen", (dialog, which) -> {
-                    preferences.edit().remove("note:" + documentKey).apply();
-                    updatePersonalButtons();
-                })
                 .setPositiveButton("Speichern", (dialog, which) -> {
-                    preferences.edit().putString("note:" + documentKey, input.getText().toString().trim()).apply();
+                    String text = input.getText().toString().trim();
+                    if (text.isEmpty()) return;
+                    List<AnchoredNote> notes = loadNotes();
+                    if (existing == null) notes.add(new AnchoredNote(anchorOffset, text));
+                    else {
+                        for (AnchoredNote note : notes)
+                            if (note.id.equals(existing.id)) { note.text = text; break; }
+                    }
+                    saveNotes(notes);
                     updatePersonalButtons();
                 }).show();
     }
 
+    private void deleteAnchoredNote(AnchoredNote target) {
+        List<AnchoredNote> notes = loadNotes();
+        for (int i = notes.size() - 1; i >= 0; i--)
+            if (notes.get(i).id.equals(target.id)) notes.remove(i);
+        saveNotes(notes); updatePersonalButtons();
+    }
+
+    private List<AnchoredNote> loadNotes() {
+        List<AnchoredNote> notes = new ArrayList<>();
+        try {
+            JSONArray array = new JSONArray(preferences.getString("notes:" + documentKey, "[]"));
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject item = array.getJSONObject(i);
+                notes.add(new AnchoredNote(item.optString("id", UUID.randomUUID().toString()), item.optInt("offset", 0), item.optString("text", "")));
+            }
+        } catch (Exception ignored) {}
+        String oldNote = preferences.getString("note:" + documentKey, "").trim();
+        if (notes.isEmpty() && !oldNote.isEmpty()) {
+            notes.add(new AnchoredNote(0, oldNote));
+            saveNotes(notes);
+            preferences.edit().remove("note:" + documentKey).apply();
+        }
+        return notes;
+    }
+
+    private void saveNotes(List<AnchoredNote> notes) {
+        JSONArray array = new JSONArray();
+        try {
+            for (AnchoredNote note : notes) {
+                JSONObject item = new JSONObject();
+                item.put("id", note.id); item.put("offset", note.offset); item.put("text", note.text);
+                array.put(item);
+            }
+        } catch (Exception ignored) {}
+        preferences.edit().putString("notes:" + documentKey, array.toString()).apply();
+    }
+
+    private int currentTextOffset() {
+        if (body.getLayout() == null) return 0;
+        int vertical = Math.max(0, scroll.getScrollY() + dp(24));
+        int line = body.getLayout().getLineForVertical(vertical);
+        return body.getLayout().getLineStart(line);
+    }
+
+    private String excerptAt(int offset) {
+        String text = body.getText().toString();
+        if (text.isEmpty()) return "Textstelle";
+        offset = Math.max(0, Math.min(offset, text.length()));
+        int start = Math.max(0, offset - 28), end = Math.min(text.length(), offset + 72);
+        String excerpt = text.substring(start, end).replaceAll("\\s+", " ").trim();
+        return (start > 0 ? "…" : "") + excerpt + (end < text.length() ? "…" : "");
+    }
+
+    private void jumpToOffset(int offset) {
+        body.post(() -> {
+            if (body.getLayout() == null) return;
+            int safeOffset = Math.max(0, Math.min(offset, body.length()));
+            int line = body.getLayout().getLineForOffset(safeOffset);
+            scroll.smoothScrollTo(0, Math.max(0, body.getLayout().getLineTop(line) - dp(18)));
+        });
+    }
+
     private void updatePersonalButtons() {
         boolean favorite = preferences.getStringSet("favorites", new HashSet<>()).contains(documentKey);
-        boolean hasNote = !preferences.getString("note:" + documentKey, "").trim().isEmpty();
+        int noteCount = loadNotes().size();
         favoriteButton.setText(favorite ? "★  Favorit" : "☆  Favorit");
-        noteButton.setText(hasNote ? "✎  Notiz vorhanden" : "✎  Notiz");
+        noteButton.setText(noteCount == 0 ? "✎  Notizen" : "✎  Notizen (" + noteCount + ")");
     }
 
     @Override protected void onPause() {
@@ -274,4 +375,12 @@ public class ReaderActivity extends Activity {
         });
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
+    private static final class AnchoredNote {
+        final String id;
+        final int offset;
+        String text;
+        AnchoredNote(int offset, String text) { this(UUID.randomUUID().toString(), offset, text); }
+        AnchoredNote(String id, int offset, String text) { this.id = id; this.offset = offset; this.text = text; }
+    }
 }
