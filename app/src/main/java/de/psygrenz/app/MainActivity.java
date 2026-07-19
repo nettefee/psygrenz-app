@@ -224,11 +224,12 @@ public class MainActivity extends Activity {
         }
         introduction.setVisibility(View.GONE);
         status.setText("Suche läuft …");
+        SearchQuery query = SearchQuery.parse(raw);
         new Thread(() -> {
             List<DocumentItem> found = new ArrayList<>();
             for (DocumentItem d : all) try {
                 String haystack = d.title + " " + d.category + " " + readAsset(d.textPath);
-                if (haystack.toLowerCase(Locale.GERMAN).contains(q)) found.add(d);
+                if (query.matches(haystack)) found.add(d);
             } catch (Exception ignored) {}
             runOnUiThread(() -> showDocuments(found));
         }).start();

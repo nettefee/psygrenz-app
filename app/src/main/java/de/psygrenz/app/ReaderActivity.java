@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.TreeSet;
 
 public class ReaderActivity extends Activity {
     private TextView body;
@@ -75,18 +76,21 @@ public class ReaderActivity extends Activity {
         try {
             String documentText = readAsset(textPath);
             if (query != null && !query.trim().isEmpty()) {
-                query = query.trim();
                 SpannableString highlighted = new SpannableString(documentText);
                 String searchableText = documentText.toLowerCase(Locale.GERMAN);
-                String searchableQuery = query.toLowerCase(Locale.GERMAN);
-                int position = 0;
-                while ((position = searchableText.indexOf(searchableQuery, position)) >= 0) {
-                    matches.add(position);
-                    int end = position + query.length();
-                    highlighted.setSpan(new BackgroundColorSpan(Color.rgb(244, 190, 250)), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    highlighted.setSpan(new StyleSpan(Typeface.BOLD), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    position = end;
+                SearchQuery parsedQuery = SearchQuery.parse(query);
+                for (String term : parsedQuery.highlightTerms()) {
+                    int position = 0;
+                    while ((position = searchableText.indexOf(term, position)) >= 0) {
+                        matches.add(position);
+                        int end = position + term.length();
+                        highlighted.setSpan(new BackgroundColorSpan(Color.rgb(244, 190, 250)), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        highlighted.setSpan(new StyleSpan(Typeface.BOLD), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        position = end;
+                    }
                 }
+                List<Integer> uniqueMatches = new ArrayList<>(new TreeSet<>(matches));
+                matches.clear(); matches.addAll(uniqueMatches);
                 body.setText(highlighted);
             } else body.setText(documentText);
         }

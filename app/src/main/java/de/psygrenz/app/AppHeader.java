@@ -36,6 +36,7 @@ final class AppHeader {
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(activity, menu);
             popup.getMenu().add("Info");
+            popup.getMenu().add("Suchtipps");
             popup.getMenu().add("Schließen");
             popup.setOnMenuItemClickListener(item -> {
                 if (item.getTitle().toString().equals("Info")) {
@@ -57,6 +58,26 @@ final class AppHeader {
                         }
                     });
                     dialog.show();
+                } else if (item.getTitle().toString().equals("Suchtipps")) {
+                    new AlertDialog.Builder(activity)
+                            .setTitle("Suchtipps")
+                            .setMessage("Einzelnes Wort\n" +
+                                    "Beispiel: Geistheilung\n\n" +
+                                    "Mehrere Wörter (alle müssen vorkommen)\n" +
+                                    "Beispiel: Leben Tod\n\n" +
+                                    "Genaue Wortfolge oder Phrase\n" +
+                                    "Beispiel: \"Leben nach dem Tod\"\n\n" +
+                                    "UND-Suche\n" +
+                                    "Beispiel: Geistheilung UND Meditation\n" +
+                                    "Auch AND ist möglich.\n\n" +
+                                    "ODER-Suche\n" +
+                                    "Beispiel: Ufologie ODER Santiner\n" +
+                                    "Auch OR ist möglich.\n\n" +
+                                    "Begriff ausschließen\n" +
+                                    "Beispiel: Geistheilung -Ufologie\n\n" +
+                                    "Groß- und Kleinschreibung spielen keine Rolle.")
+                            .setPositiveButton("Schließen", (DialogInterface d, int w) -> d.dismiss())
+                            .show();
                 } else activity.finishAffinity();
                 return true;
             });
