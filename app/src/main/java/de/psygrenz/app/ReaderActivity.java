@@ -36,7 +36,6 @@ public class ReaderActivity extends Activity {
     private Button nextMatch;
     private SharedPreferences preferences;
     private String documentKey;
-    private boolean openedFromSearch;
     private Button favoriteButton;
     private Button noteButton;
 
@@ -47,7 +46,6 @@ public class ReaderActivity extends Activity {
         String pdfPath = getIntent().getStringExtra("pdf");
         String query = getIntent().getStringExtra("query");
         documentKey = pdfPath;
-        openedFromSearch = query != null && !query.trim().isEmpty();
         preferences = getSharedPreferences("psygrenz", MODE_PRIVATE);
 
         root = new LinearLayout(this);
@@ -186,6 +184,10 @@ public class ReaderActivity extends Activity {
                 .setTitle("Eigene Notiz")
                 .setView(input)
                 .setNegativeButton("Abbrechen", null)
+                .setNeutralButton("Notiz löschen", (dialog, which) -> {
+                    preferences.edit().remove("note:" + documentKey).apply();
+                    updatePersonalButtons();
+                })
                 .setPositiveButton("Speichern", (dialog, which) -> {
                     preferences.edit().putString("note:" + documentKey, input.getText().toString().trim()).apply();
                     updatePersonalButtons();
@@ -200,7 +202,7 @@ public class ReaderActivity extends Activity {
     }
 
     @Override protected void onPause() {
-        if (!openedFromSearch && scroll != null && documentKey != null)
+        if (scroll != null && documentKey != null)
             preferences.edit().putInt("position:" + documentKey, scroll.getScrollY()).apply();
         super.onPause();
     }
