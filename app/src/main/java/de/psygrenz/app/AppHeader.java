@@ -35,8 +35,10 @@ final class AppHeader {
             popup.getMenu().add("Schließen");
             popup.setOnMenuItemClickListener(item -> {
                 if (item.getTitle().toString().equals("Info")) {
-                    new AlertDialog.Builder(activity).setTitle("Über PsyGrenz")
-                            .setMessage("Der Informationstext wird noch ergänzt.")
+                    new AlertDialog.Builder(activity).setTitle("Über diese App")
+                            .setMessage("PsyGrenz ist Ihr Wegweiser durch die psychowissenschaftlichen Grenzgebiete: medial überlieferte Botschaften, die Licht auf den Sinn des Lebens und die Frage nach Tod und Wiedergeburt werfen.\n\n" +
+                                    "Die PsyGrenz-App enthält alle medialen Schriften (Protokolle), die auch auf der Internetseite psygrenz.de veröffentlicht sind. Alle Inhalte stehen vollständig zum Lesen zur Verfügung – auch ohne Internetverbindung.\n\n" +
+                                    "Ergänzende Informationen, weitere Materialien und Hintergründe finden Sie auf unserer Webseite: www.psygrenz.de")
                             .setPositiveButton("Schließen", (DialogInterface d, int w) -> d.dismiss()).show();
                 } else activity.finishAffinity();
                 return true;
