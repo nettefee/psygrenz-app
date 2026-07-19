@@ -15,6 +15,8 @@ import android.view.View;
 import android.widget.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class ReaderActivity extends Activity {
@@ -22,6 +24,12 @@ public class ReaderActivity extends Activity {
     private float size = 18f;
     private boolean dark = false;
     private LinearLayout root;
+    private ScrollView scroll;
+    private final List<Integer> matches = new ArrayList<>();
+    private int currentMatch = 0;
+    private TextView matchCounter;
+    private Button previousMatch;
+    private Button nextMatch;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -59,12 +67,11 @@ public class ReaderActivity extends Activity {
         tools.addView(smaller); tools.addView(larger); tools.addView(mode); tools.addView(original);
         root.addView(tools);
 
-        ScrollView scroll = new ScrollView(this);
+        scroll = new ScrollView(this);
         body = new TextView(this);
         body.setTextSize(size);
         body.setLineSpacing(4, 1.18f);
         body.setPadding(24, 20, 24, 56);
-        int firstMatch = -1;
         try {
             String documentText = readAsset(textPath);
             if (query != null && !query.trim().isEmpty()) {
@@ -74,7 +81,7 @@ public class ReaderActivity extends Activity {
                 String searchableQuery = query.toLowerCase(Locale.GERMAN);
                 int position = 0;
                 while ((position = searchableText.indexOf(searchableQuery, position)) >= 0) {
-                    if (firstMatch < 0) firstMatch = position;
+                    matches.add(position);
                     int end = position + query.length();
                     highlighted.setSpan(new BackgroundColorSpan(Color.rgb(244, 190, 250)), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     highlighted.setSpan(new StyleSpan(Typeface.BOLD), position, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -84,18 +91,32 @@ public class ReaderActivity extends Activity {
             } else body.setText(documentText);
         }
         catch (Exception e) { body.setText("Der Text konnte nicht geladen werden."); }
+
+        LinearLayout matchNavigation = new LinearLayout(this);
+        matchNavigation.setGravity(Gravity.CENTER_VERTICAL);
+        matchNavigation.setPadding(dp(8), dp(5), dp(8), dp(7));
+        matchNavigation.setBackgroundColor(Color.rgb(253, 239, 255));
+        previousMatch = matchButton("‹  Vorheriger");
+        matchCounter = new TextView(this);
+        matchCounter.setGravity(Gravity.CENTER);
+        matchCounter.setTextColor(Color.rgb(128, 0, 128));
+        matchCounter.setTextSize(15);
+        nextMatch = matchButton("Nächster  ›");
+        matchNavigation.addView(previousMatch, new LinearLayout.LayoutParams(0, dp(42), 1));
+        matchNavigation.addView(matchCounter, new LinearLayout.LayoutParams(dp(72), dp(42)));
+        matchNavigation.addView(nextMatch, new LinearLayout.LayoutParams(0, dp(42), 1));
+        matchNavigation.setVisibility(matches.isEmpty() ? View.GONE : View.VISIBLE);
+        root.addView(matchNavigation);
+
         scroll.addView(body);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
         applyMode();
 
-        final int scrollTarget = firstMatch;
-        if (scrollTarget >= 0) body.post(() -> {
-            if (body.getLayout() != null) {
-                int line = body.getLayout().getLineForOffset(scrollTarget);
-                scroll.smoothScrollTo(0, Math.max(0, body.getLayout().getLineTop(line) - dp(18)));
-            }
-        });
+        if (!matches.isEmpty()) {
+            updateMatchNavigation();
+            scrollToMatch(0);
+        }
 
         smaller.setOnClickListener(v -> { size = Math.max(13f, size - 2f); body.setTextSize(size); });
         larger.setOnClickListener(v -> { size = Math.min(34f, size + 2f); body.setTextSize(size); });
@@ -110,6 +131,41 @@ public class ReaderActivity extends Activity {
             Intent i = new Intent(this, PdfActivity.class);
             i.putExtra("title", title); i.putExtra("pdf", pdfPath); startActivity(i);
         });
+        previousMatch.setOnClickListener(v -> {
+            if (currentMatch > 0) scrollToMatch(currentMatch - 1);
+        });
+        nextMatch.setOnClickListener(v -> {
+            if (currentMatch + 1 < matches.size()) scrollToMatch(currentMatch + 1);
+        });
+    }
+
+    private Button matchButton(String text) {
+        Button button = button(text);
+        button.setAllCaps(false);
+        button.setTextColor(Color.rgb(128, 0, 128));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(Color.WHITE); background.setCornerRadius(dp(12));
+        background.setStroke(dp(1), Color.rgb(190, 78, 202));
+        button.setBackground(background);
+        return button;
+    }
+
+    private void scrollToMatch(int index) {
+        if (index < 0 || index >= matches.size()) return;
+        currentMatch = index;
+        updateMatchNavigation();
+        body.post(() -> {
+            if (body.getLayout() != null) {
+                int line = body.getLayout().getLineForOffset(matches.get(currentMatch));
+                scroll.smoothScrollTo(0, Math.max(0, body.getLayout().getLineTop(line) - dp(18)));
+            }
+        });
+    }
+
+    private void updateMatchNavigation() {
+        matchCounter.setText((currentMatch + 1) + " / " + matches.size());
+        previousMatch.setEnabled(currentMatch > 0);
+        nextMatch.setEnabled(currentMatch + 1 < matches.size());
     }
 
     private Button button(String text) {
