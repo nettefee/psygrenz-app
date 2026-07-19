@@ -52,6 +52,9 @@ public class ReaderActivity extends Activity {
         String query = getIntent().getStringExtra("query");
         documentKey = pdfPath;
         preferences = getSharedPreferences("psygrenz", MODE_PRIVATE);
+        size = preferences.getFloat("reader_size", 18f);
+        dark = preferences.getBoolean("reader_dark", false);
+        recordRecentlyRead();
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -78,7 +81,7 @@ public class ReaderActivity extends Activity {
         LinearLayout tools = new LinearLayout(this);
         tools.setGravity(Gravity.CENTER);
         tools.setPadding(6, 6, 6, 6);
-        Button smaller = button("A−"), larger = button("A+"), mode = button("Nacht"), original = button("PDF");
+        Button smaller = button("A−"), larger = button("A+"), mode = button(dark ? "Tag" : "Nacht"), original = button("PDF");
         tools.addView(smaller); tools.addView(larger); tools.addView(mode); tools.addView(original);
         root.addView(tools);
 
@@ -153,9 +156,12 @@ public class ReaderActivity extends Activity {
             scrollToMatch(0);
         } else body.post(() -> scroll.scrollTo(0, preferences.getInt("position:" + documentKey, 0)));
 
-        smaller.setOnClickListener(v -> { size = Math.max(13f, size - 2f); body.setTextSize(size); });
-        larger.setOnClickListener(v -> { size = Math.min(34f, size + 2f); body.setTextSize(size); });
-        mode.setOnClickListener(v -> { dark = !dark; applyMode(); });
+        smaller.setOnClickListener(v -> { size = Math.max(13f, size - 2f); body.setTextSize(size); preferences.edit().putFloat("reader_size", size).apply(); });
+        larger.setOnClickListener(v -> { size = Math.min(34f, size + 2f); body.setTextSize(size); preferences.edit().putFloat("reader_size", size).apply(); });
+        mode.setOnClickListener(v -> {
+            dark = !dark; applyMode(); mode.setText(dark ? "Tag" : "Nacht");
+            preferences.edit().putBoolean("reader_dark", dark).apply();
+        });
         back.setOnClickListener(v -> finish());
         home.setOnClickListener(v -> {
             Intent i = new Intent(this, MainActivity.class);
@@ -192,6 +198,19 @@ public class ReaderActivity extends Activity {
         if (favorites.contains(documentKey)) favorites.remove(documentKey); else favorites.add(documentKey);
         preferences.edit().putStringSet("favorites", favorites).apply();
         updatePersonalButtons();
+    }
+
+    private void recordRecentlyRead() {
+        try {
+            JSONArray old = new JSONArray(preferences.getString("recent", "[]"));
+            JSONArray updated = new JSONArray();
+            updated.put(documentKey);
+            for (int i = 0; i < old.length() && updated.length() < 20; i++) {
+                String path = old.getString(i);
+                if (!path.equals(documentKey)) updated.put(path);
+            }
+            preferences.edit().putString("recent", updated.toString()).apply();
+        } catch (Exception ignored) {}
     }
 
     private void showNotes() {

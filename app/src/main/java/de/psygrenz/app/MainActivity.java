@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
     private Button homeButton;
     private LinearLayout navigationRow;
     private boolean favoritesMode = false;
+    private boolean recentMode = false;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -117,7 +118,9 @@ public class MainActivity extends Activity {
 
         setContentView(root);
         loadData();
-        if (getIntent().getBooleanExtra("show_favorites", false)) showFavorites(); else showHome();
+        if (getIntent().getBooleanExtra("show_favorites", false)) showFavorites();
+        else if (getIntent().getBooleanExtra("show_recent", false)) showRecent();
+        else showHome();
 
         backButton.setOnClickListener(v -> goBack());
         homeButton.setOnClickListener(v -> showHome());
@@ -144,13 +147,16 @@ public class MainActivity extends Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (intent.getBooleanExtra("show_favorites", false)) showFavorites(); else showHome();
+        if (intent.getBooleanExtra("show_favorites", false)) showFavorites();
+        else if (intent.getBooleanExtra("show_recent", false)) showRecent();
+        else showHome();
         if (intent.getBooleanExtra("show_backup", false)) navigationRow.post(this::showBackupDialog);
     }
 
     @Override protected void onResume() {
         super.onResume();
         if (favoritesMode && documentAdapter != null) showDocuments(favoriteDocuments());
+        else if (recentMode && documentAdapter != null) showDocuments(recentDocuments());
     }
 
     private void showBackupDialog() {
@@ -193,6 +199,8 @@ public class MainActivity extends Activity {
             Object content = entry.getValue();
             if (content instanceof String) { value.put("type", "string"); value.put("value", content); }
             else if (content instanceof Integer) { value.put("type", "int"); value.put("value", content); }
+            else if (content instanceof Float) { value.put("type", "float"); value.put("value", content); }
+            else if (content instanceof Long) { value.put("type", "long"); value.put("value", content); }
             else if (content instanceof Boolean) { value.put("type", "boolean"); value.put("value", content); }
             else if (content instanceof Set) {
                 value.put("type", "set"); JSONArray array = new JSONArray();
@@ -225,6 +233,8 @@ public class MainActivity extends Activity {
             String type = value.getString("type");
             if (type.equals("string")) editor.putString(key, value.getString("value"));
             else if (type.equals("int")) editor.putInt(key, value.getInt("value"));
+            else if (type.equals("float")) editor.putFloat(key, (float) value.getDouble("value"));
+            else if (type.equals("long")) editor.putLong(key, value.getLong("value"));
             else if (type.equals("boolean")) editor.putBoolean(key, value.getBoolean("value"));
             else if (type.equals("set")) {
                 JSONArray array = value.getJSONArray("value"); Set<String> set = new HashSet<>();
@@ -259,6 +269,7 @@ public class MainActivity extends Activity {
 
     private void showHome() {
         favoritesMode = false;
+        recentMode = false;
         current = null;
         history.clear();
         search.setText("");
@@ -270,6 +281,7 @@ public class MainActivity extends Activity {
 
     private void showFavorites() {
         favoritesMode = true;
+        recentMode = false;
         current = null;
         history.clear();
         search.setText("");
@@ -277,6 +289,28 @@ public class MainActivity extends Activity {
         navigationRow.setVisibility(View.VISIBLE);
         introduction.setVisibility(View.GONE);
         showDocuments(favoriteDocuments());
+    }
+
+    private void showRecent() {
+        favoritesMode = false;
+        recentMode = true;
+        current = null; history.clear(); search.setText("");
+        breadcrumb.setText("Zuletzt gelesen");
+        navigationRow.setVisibility(View.VISIBLE);
+        introduction.setVisibility(View.GONE);
+        showDocuments(recentDocuments());
+    }
+
+    private List<DocumentItem> recentDocuments() {
+        List<DocumentItem> recent = new ArrayList<>();
+        try {
+            JSONArray paths = new JSONArray(getSharedPreferences("psygrenz", MODE_PRIVATE).getString("recent", "[]"));
+            for (int i = 0; i < paths.length(); i++) {
+                String path = paths.getString(i);
+                for (DocumentItem document : all) if (document.pdfPath.equals(path)) { recent.add(document); break; }
+            }
+        } catch (Exception ignored) {}
+        return recent;
     }
 
     private List<DocumentItem> favoriteDocuments() {
@@ -300,7 +334,7 @@ public class MainActivity extends Activity {
     private void goBack() {
         search.setText("");
         if (current == null) {
-            if (favoritesMode) showHome();
+            if (favoritesMode || recentMode) showHome();
             return;
         }
         NavNode parent = current.parent;
@@ -341,6 +375,8 @@ public class MainActivity extends Activity {
         if (q.isEmpty()) {
             if (favoritesMode) {
                 showDocuments(favoriteDocuments());
+            } else if (recentMode) {
+                showDocuments(recentDocuments());
             } else if (current == null) {
                 introduction.setVisibility(View.VISIBLE);
                 showTiles(roots);
@@ -354,13 +390,18 @@ public class MainActivity extends Activity {
         introduction.setVisibility(View.GONE);
         status.setText("Suche läuft …");
         SearchQuery query = SearchQuery.parse(raw);
-        Set<String> favoriteFilter = favoritesMode
-                ? new HashSet<>(getSharedPreferences("psygrenz", MODE_PRIVATE).getStringSet("favorites", Collections.emptySet()))
-                : null;
+        Set<String> favoriteFilter = null;
+        if (favoritesMode)
+            favoriteFilter = new HashSet<>(getSharedPreferences("psygrenz", MODE_PRIVATE).getStringSet("favorites", Collections.emptySet()));
+        else if (recentMode) {
+            favoriteFilter = new HashSet<>();
+            for (DocumentItem document : recentDocuments()) favoriteFilter.add(document.pdfPath);
+        }
+        final Set<String> activeFilter = favoriteFilter;
         new Thread(() -> {
             List<DocumentItem> found = new ArrayList<>();
             for (DocumentItem d : all) try {
-                if (favoriteFilter != null && !favoriteFilter.contains(d.pdfPath)) continue;
+                if (activeFilter != null && !activeFilter.contains(d.pdfPath)) continue;
                 String haystack = d.title + " " + d.category + " " + readAsset(d.textPath);
                 if (query.matches(haystack)) found.add(d);
             } catch (Exception ignored) {}

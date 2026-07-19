@@ -45,6 +45,7 @@ final class AppHeader {
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(activity, menu);
             popup.getMenu().add("Favoriten");
+            popup.getMenu().add("Zuletzt gelesen");
             popup.getMenu().add("Datensicherung");
             popup.getMenu().add("Info");
             popup.getMenu().add("Suchtipps");
@@ -55,6 +56,11 @@ final class AppHeader {
                     favorites.putExtra("show_favorites", true);
                     favorites.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     activity.startActivity(favorites);
+                } else if (item.getTitle().toString().equals("Zuletzt gelesen")) {
+                    Intent recent = new Intent(activity, MainActivity.class);
+                    recent.putExtra("show_recent", true);
+                    recent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    activity.startActivity(recent);
                 } else if (item.getTitle().toString().equals("Datensicherung")) {
                     Intent backup = new Intent(activity, MainActivity.class);
                     backup.putExtra("show_backup", true);
