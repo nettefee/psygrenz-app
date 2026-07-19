@@ -26,18 +26,19 @@ public class ReaderActivity extends Activity {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         applySystemInsets(root);
+        root.addView(AppHeader.create(this));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(dp(8), dp(7), dp(10), dp(7));
-        header.setBackgroundColor(Color.rgb(128, 0, 128));
-        Button back = headerButton("←");
+        header.setBackgroundColor(Color.rgb(253, 239, 255));
+        Button back = headerButton("‹");
         Button home = headerButton("⌂");
         TextView heading = new TextView(this);
         heading.setText(title);
         heading.setTextSize(20);
-        heading.setTextColor(Color.WHITE);
+        heading.setTextColor(Color.rgb(128, 0, 128));
         heading.setPadding(dp(10), 0, 0, 0);
         header.addView(back);
         header.addView(home);
@@ -90,6 +91,7 @@ public class ReaderActivity extends Activity {
     private Button headerButton(String text) {
         Button b = new Button(this);
         b.setText(text); b.setTextSize(21); b.setTextColor(Color.WHITE);
+        b.setGravity(Gravity.CENTER); b.setIncludeFontPadding(false);
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(Color.rgb(190, 78, 202)); bg.setCornerRadius(dp(18)); bg.setStroke(dp(1), Color.WHITE);
         b.setBackground(bg); b.setPadding(dp(8), 0, dp(8), 0);

@@ -48,17 +48,7 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(PALE);
         applySystemInsets(root);
 
-        LinearLayout top = new LinearLayout(this);
-        top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setPadding(dp(8), dp(6), dp(10), dp(6));
-        top.setBackgroundColor(PURPLE);
-        TextView title = new TextView(this);
-        title.setText("PsyGrenz");
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(23);
-        title.setGravity(Gravity.CENTER);
-        top.addView(title, new LinearLayout.LayoutParams(-1, dp(54)));
-        root.addView(top);
+        root.addView(AppHeader.create(this));
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
