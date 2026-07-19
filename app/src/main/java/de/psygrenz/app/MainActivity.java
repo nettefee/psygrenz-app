@@ -40,6 +40,7 @@ public class MainActivity extends Activity {
     private Button backButton;
     private Button homeButton;
     private LinearLayout navigationRow;
+    private boolean favoritesMode = false;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -113,7 +114,7 @@ public class MainActivity extends Activity {
 
         setContentView(root);
         loadData();
-        showHome();
+        if (getIntent().getBooleanExtra("show_favorites", false)) showFavorites(); else showHome();
 
         backButton.setOnClickListener(v -> goBack());
         homeButton.setOnClickListener(v -> showHome());
@@ -128,7 +129,12 @@ public class MainActivity extends Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        showHome();
+        if (intent.getBooleanExtra("show_favorites", false)) showFavorites(); else showHome();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (favoritesMode && documentAdapter != null) showDocuments(favoriteDocuments());
     }
 
     private void loadData() {
@@ -153,6 +159,7 @@ public class MainActivity extends Activity {
     }
 
     private void showHome() {
+        favoritesMode = false;
         current = null;
         history.clear();
         search.setText("");
@@ -160,6 +167,24 @@ public class MainActivity extends Activity {
         navigationRow.setVisibility(View.GONE);
         introduction.setVisibility(View.VISIBLE);
         showTiles(roots);
+    }
+
+    private void showFavorites() {
+        favoritesMode = true;
+        current = null;
+        history.clear();
+        search.setText("");
+        breadcrumb.setText("Favoriten");
+        navigationRow.setVisibility(View.VISIBLE);
+        introduction.setVisibility(View.GONE);
+        showDocuments(favoriteDocuments());
+    }
+
+    private List<DocumentItem> favoriteDocuments() {
+        Set<String> saved = getSharedPreferences("psygrenz", MODE_PRIVATE).getStringSet("favorites", Collections.emptySet());
+        List<DocumentItem> favorites = new ArrayList<>();
+        for (DocumentItem document : all) if (saved.contains(document.pdfPath)) favorites.add(document);
+        return favorites;
     }
 
     private void openNode(NavNode node) {
@@ -175,7 +200,10 @@ public class MainActivity extends Activity {
 
     private void goBack() {
         search.setText("");
-        if (current == null) return;
+        if (current == null) {
+            if (favoritesMode) showHome();
+            return;
+        }
         NavNode parent = current.parent;
         if (parent == null) showHome();
         else {
@@ -212,7 +240,9 @@ public class MainActivity extends Activity {
     private void runSearch(String raw) {
         String q = raw.trim().toLowerCase(Locale.GERMAN);
         if (q.isEmpty()) {
-            if (current == null) {
+            if (favoritesMode) {
+                showDocuments(favoriteDocuments());
+            } else if (current == null) {
                 introduction.setVisibility(View.VISIBLE);
                 showTiles(roots);
             } else {
@@ -225,9 +255,13 @@ public class MainActivity extends Activity {
         introduction.setVisibility(View.GONE);
         status.setText("Suche läuft …");
         SearchQuery query = SearchQuery.parse(raw);
+        Set<String> favoriteFilter = favoritesMode
+                ? new HashSet<>(getSharedPreferences("psygrenz", MODE_PRIVATE).getStringSet("favorites", Collections.emptySet()))
+                : null;
         new Thread(() -> {
             List<DocumentItem> found = new ArrayList<>();
             for (DocumentItem d : all) try {
+                if (favoriteFilter != null && !favoriteFilter.contains(d.pdfPath)) continue;
                 String haystack = d.title + " " + d.category + " " + readAsset(d.textPath);
                 if (query.matches(haystack)) found.add(d);
             } catch (Exception ignored) {}

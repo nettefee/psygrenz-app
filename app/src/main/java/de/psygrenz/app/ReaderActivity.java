@@ -2,6 +2,7 @@ package de.psygrenz.app;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -19,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeSet;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ReaderActivity extends Activity {
     private TextView body;
@@ -31,6 +34,11 @@ public class ReaderActivity extends Activity {
     private TextView matchCounter;
     private Button previousMatch;
     private Button nextMatch;
+    private SharedPreferences preferences;
+    private String documentKey;
+    private boolean openedFromSearch;
+    private Button favoriteButton;
+    private Button noteButton;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -38,6 +46,9 @@ public class ReaderActivity extends Activity {
         String textPath = getIntent().getStringExtra("text");
         String pdfPath = getIntent().getStringExtra("pdf");
         String query = getIntent().getStringExtra("query");
+        documentKey = pdfPath;
+        openedFromSearch = query != null && !query.trim().isEmpty();
+        preferences = getSharedPreferences("psygrenz", MODE_PRIVATE);
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -67,6 +78,19 @@ public class ReaderActivity extends Activity {
         Button smaller = button("A−"), larger = button("A+"), mode = button("Nacht"), original = button("PDF");
         tools.addView(smaller); tools.addView(larger); tools.addView(mode); tools.addView(original);
         root.addView(tools);
+
+        LinearLayout personal = new LinearLayout(this);
+        personal.setPadding(dp(8), 0, dp(8), dp(6));
+        favoriteButton = matchButton("");
+        noteButton = matchButton("");
+        updatePersonalButtons();
+        LinearLayout.LayoutParams personalLeft = new LinearLayout.LayoutParams(0, dp(42), 1);
+        personalLeft.setMargins(0, 0, dp(5), 0);
+        LinearLayout.LayoutParams personalRight = new LinearLayout.LayoutParams(0, dp(42), 1);
+        personalRight.setMargins(dp(5), 0, 0, 0);
+        personal.addView(favoriteButton, personalLeft);
+        personal.addView(noteButton, personalRight);
+        root.addView(personal);
 
         scroll = new ScrollView(this);
         body = new TextView(this);
@@ -120,7 +144,7 @@ public class ReaderActivity extends Activity {
         if (!matches.isEmpty()) {
             updateMatchNavigation();
             scrollToMatch(0);
-        }
+        } else body.post(() -> scroll.scrollTo(0, preferences.getInt("position:" + documentKey, 0)));
 
         smaller.setOnClickListener(v -> { size = Math.max(13f, size - 2f); body.setTextSize(size); });
         larger.setOnClickListener(v -> { size = Math.min(34f, size + 2f); body.setTextSize(size); });
@@ -141,6 +165,44 @@ public class ReaderActivity extends Activity {
         nextMatch.setOnClickListener(v -> {
             if (currentMatch + 1 < matches.size()) scrollToMatch(currentMatch + 1);
         });
+        favoriteButton.setOnClickListener(v -> toggleFavorite());
+        noteButton.setOnClickListener(v -> editNote());
+    }
+
+    private void toggleFavorite() {
+        Set<String> favorites = new HashSet<>(preferences.getStringSet("favorites", new HashSet<>()));
+        if (favorites.contains(documentKey)) favorites.remove(documentKey); else favorites.add(documentKey);
+        preferences.edit().putStringSet("favorites", favorites).apply();
+        updatePersonalButtons();
+    }
+
+    private void editNote() {
+        EditText input = new EditText(this);
+        input.setText(preferences.getString("note:" + documentKey, ""));
+        input.setHint("Deine Notiz zu diesem Dokument …");
+        input.setMinLines(5); input.setGravity(Gravity.TOP);
+        input.setPadding(dp(18), dp(12), dp(18), dp(12));
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Eigene Notiz")
+                .setView(input)
+                .setNegativeButton("Abbrechen", null)
+                .setPositiveButton("Speichern", (dialog, which) -> {
+                    preferences.edit().putString("note:" + documentKey, input.getText().toString().trim()).apply();
+                    updatePersonalButtons();
+                }).show();
+    }
+
+    private void updatePersonalButtons() {
+        boolean favorite = preferences.getStringSet("favorites", new HashSet<>()).contains(documentKey);
+        boolean hasNote = !preferences.getString("note:" + documentKey, "").trim().isEmpty();
+        favoriteButton.setText(favorite ? "★  Favorit" : "☆  Favorit");
+        noteButton.setText(hasNote ? "✎  Notiz vorhanden" : "✎  Notiz");
+    }
+
+    @Override protected void onPause() {
+        if (!openedFromSearch && scroll != null && documentKey != null)
+            preferences.edit().putInt("position:" + documentKey, scroll.getScrollY()).apply();
+        super.onPause();
     }
 
     private Button matchButton(String text) {

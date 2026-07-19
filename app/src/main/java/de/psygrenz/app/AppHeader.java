@@ -1,6 +1,7 @@
 package de.psygrenz.app;
 
 import android.app.*;
+import android.content.Intent;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.text.SpannableString;
@@ -35,11 +36,17 @@ final class AppHeader {
 
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(activity, menu);
+            popup.getMenu().add("Favoriten");
             popup.getMenu().add("Info");
             popup.getMenu().add("Suchtipps");
             popup.getMenu().add("Schließen");
             popup.setOnMenuItemClickListener(item -> {
-                if (item.getTitle().toString().equals("Info")) {
+                if (item.getTitle().toString().equals("Favoriten")) {
+                    Intent favorites = new Intent(activity, MainActivity.class);
+                    favorites.putExtra("show_favorites", true);
+                    favorites.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    activity.startActivity(favorites);
+                } else if (item.getTitle().toString().equals("Info")) {
                     String info = "PsyGrenz ist Ihr Wegweiser durch die psychowissenschaftlichen Grenzgebiete: medial überlieferte Botschaften, die Licht auf den Sinn des Lebens und die Frage nach Tod und Wiedergeburt werfen.\n\n" +
                                     "Die PsyGrenz-App enthält alle medialen Schriften (Protokolle), die auch auf der Internetseite psygrenz.de veröffentlicht sind. Alle Inhalte stehen vollständig zum Lesen zur Verfügung – auch ohne Internetverbindung.\n\n" +
                                     "Ergänzende Informationen, weitere Materialien und Hintergründe finden Sie auf unserer Webseite: www.psygrenz.de";
