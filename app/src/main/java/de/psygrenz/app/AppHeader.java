@@ -23,6 +23,8 @@ final class AppHeader {
 
         TextView book = new TextView(activity);
         book.setText("📖"); book.setTextSize(25); book.setGravity(Gravity.CENTER);
+        book.setContentDescription("Zur Startseite");
+        book.setClickable(true); book.setFocusable(true);
         TextView title = new TextView(activity);
         title.setText("PsyGrenz"); title.setTextSize(23); title.setTextColor(Color.WHITE); title.setGravity(Gravity.CENTER);
         Button menu = new Button(activity);
@@ -33,6 +35,12 @@ final class AppHeader {
         bar.addView(book, new LinearLayout.LayoutParams(dp(activity, 54), dp(activity, 54)));
         bar.addView(title, new LinearLayout.LayoutParams(0, dp(activity, 54), 1));
         bar.addView(menu, new LinearLayout.LayoutParams(dp(activity, 54), dp(activity, 54)));
+
+        book.setOnClickListener(v -> {
+            Intent home = new Intent(activity, MainActivity.class);
+            home.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            activity.startActivity(home);
+        });
 
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(activity, menu);
