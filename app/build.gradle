@@ -1,5 +1,10 @@
 plugins { id 'com.android.application' }
 
+def signingStoreFile = System.getenv('ANDROID_KEYSTORE_FILE')
+def signingStorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+def signingKeyAlias = System.getenv('ANDROID_KEY_ALIAS')
+def signingKeyPassword = System.getenv('ANDROID_KEY_PASSWORD')
+
 android {
     namespace 'de.psygrenz.app'
     compileSdk 35
@@ -8,12 +13,24 @@ android {
         applicationId 'de.psygrenz.app'
         minSdk 23
         targetSdk 35
-        versionCode 33
-        versionName '0.13.0'
+        versionCode 34
+        versionName '0.13.1'
+    }
+
+    signingConfigs {
+        release {
+            if (signingStoreFile) {
+                storeFile file(signingStoreFile)
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
